@@ -1,0 +1,3 @@
+config WAMR
+    default n
+    bool "if wamr is enabled"
