@@ -1,3 +1,15 @@
 config WAMR
     default n
     bool "if wamr is enabled"
+
+config WASM_APP_THREAD_STACK_SIZE_KB
+    default 64
+    int "wasm app thread stack size"
+
+config WASM_APP_STACK_SIZE_KB
+    default 32
+    int "wasm_app stack size"
+
+config WASM_APP_HEAP_SIZE_KB
+    default 32
+    int "wasm_app heap size"

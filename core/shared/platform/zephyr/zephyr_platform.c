@@ -52,7 +52,7 @@ bh_platform_init()
 {
     extern void __stdout_hook_install(int (*hook)(int));
     /* Enable printf() in Zephyr */
-    __stdout_hook_install(_stdout_hook_iwasm);
+    // __stdout_hook_install(_stdout_hook_iwasm);
 
 #if WASM_ENABLE_AOT != 0
 #ifdef CONFIG_ARM_MPU
@@ -73,18 +73,19 @@ bh_platform_destroy()
 void *
 os_malloc(unsigned size)
 {
-    return NULL;
+    return malloc(size);
 }
 
 void *
 os_realloc(void *ptr, unsigned size)
 {
-    return NULL;
+    return realloc(ptr, size);
 }
 
 void
 os_free(void *ptr)
 {
+    free(ptr);
 }
 
 struct out_context {

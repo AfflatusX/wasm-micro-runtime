@@ -609,7 +609,7 @@ wasm_app_module_install(request_t * msg)
     }
 
     /* Parse heap size */
-    heap_size = APP_HEAP_SIZE_DEFAULT;
+    heap_size = CONFIG_WASM_APP_HEAP_SIZE_KB * 1024;
     find_key_value(properties, strlen(properties), "heap", heap_size_str,
                    sizeof(heap_size_str) - 1, '&');
     if (strlen(heap_size_str) > 0) {
@@ -794,7 +794,7 @@ wasm_app_module_install(request_t * msg)
     }
 
     if (!(wasm_app_data->exec_env = exec_env =
-                wasm_runtime_create_exec_env(inst, DEFAULT_WASM_STACK_SIZE))) {
+                wasm_runtime_create_exec_env(inst, CONFIG_WASM_APP_STACK_SIZE_KB * 1024))) {
         SEND_ERR_RESPONSE(msg->mid, "Install WASM app failed: create exec env failed.");
         goto fail;
     }
@@ -847,7 +847,7 @@ wasm_app_module_install(request_t * msg)
         goto fail;
     }
 
-    stack_size = APP_THREAD_STACK_SIZE_DEFAULT;
+    stack_size = CONFIG_WASM_APP_THREAD_STACK_SIZE_KB * 1024;
 #ifdef OS_ENABLE_HW_BOUND_CHECK
     stack_size += 4 * BH_KB;
 #endif
@@ -1625,4 +1625,3 @@ wasm_get_wasi_root_dir()
     return wasi_root_dir;
 }
 #endif
-
