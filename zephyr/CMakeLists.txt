@@ -5,7 +5,7 @@ if(CONFIG_WAMR)
 
     set (WAMR_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
-    set (WAMR_BUILD_INTERP 1)
+    set (WAMR_BUILD_AOT 1)
     set (WAMR_BUILD_LIBC_BUILTIN 1)
     set (WAMR_BUILD_TARGET "X86_32")
     set (WAMR_BUILD_PLATFORM "zephyr")

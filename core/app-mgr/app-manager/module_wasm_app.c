@@ -13,7 +13,9 @@
 #include "event.h"
 #include "watchdog.h"
 #include "runtime_lib.h"
+#if WASM_ENABLE_INTERP
 #include "wasm.h"
+#endif
 #if WASM_ENABLE_AOT != 0
 #include "aot_export.h"
 #endif
@@ -36,6 +38,22 @@ static uint8 wasm_aot_version[4] = {
     (uint8) 0x00,
     (uint8) 0x00
 };
+
+/**
+ * Align an unsigned value on a alignment boundary.
+ *
+ * @param v the value to be aligned
+ * @param b the alignment boundary (2, 4, 8, ...)
+ *
+ * @return the aligned value
+ */
+inline static unsigned
+align_uint (unsigned v, unsigned b)
+{
+    unsigned m = b - 1;
+    return (v + m) & ~m;
+}
+
 #endif
 
 static union {
@@ -576,6 +594,8 @@ wasm_app_module_install(request_t * msg)
     char timeout_str[MAX_INT_STR_LEN] = { 0 };
     char heap_size_str[MAX_INT_STR_LEN] = { 0 };
     char timers_str[MAX_INT_STR_LEN] = { 0 }, err[256];
+    char error_buf[128];
+
 #if WASM_ENABLE_LIBC_WASI != 0
     char wasi_dir_buf[PATH_MAX] = { 0 };
     const char *wasi_dir_list[] = { wasi_dir_buf };
@@ -644,8 +664,8 @@ wasm_app_module_install(request_t * msg)
             aot_file = &wasm_app_file->u.aot;
 
             /* Load AOT module from sections */
-            module = wasm_runtime_load_from_sections(aot_file->sections, true,
-                                                     err, err_size);
+            module = wasm_runtime_load(msg->payload, msg->payload_len,
+                                          error_buf, sizeof(error_buf));
             if (!module) {
                 SEND_ERR_RESPONSE(msg->mid,
                                   "Install WASM app failed: load WASM file failed.");
@@ -675,7 +695,7 @@ wasm_app_module_install(request_t * msg)
 #endif
 
             /* Instantiate the AOT module */
-            inst = wasm_runtime_instantiate(module, CONFIG_WASM_APP_STACK_SIZE_KB * 1024, heap_size, err, err_size);
+            inst = wasm_runtime_instantiate(module, 0, heap_size, err, err_size);
             if (!inst) {
                 SEND_ERR_RESPONSE(msg->mid,
                                   "Install WASM app failed: instantiate wasm runtime failed.");
@@ -713,8 +733,6 @@ wasm_app_module_install(request_t * msg)
             bytecode_file = &wasm_app_file->u.bytecode;
 
             /* Load wasm module from sections */
-            char error_buf[128];
-
             module = wasm_runtime_load(msg->payload, msg->payload_len,
                                           error_buf, sizeof(error_buf));
             if (!module) {
