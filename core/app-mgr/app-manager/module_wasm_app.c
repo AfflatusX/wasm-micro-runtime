@@ -650,13 +650,13 @@ wasm_app_module_install(request_t * msg)
                 SEND_ERR_RESPONSE(msg->mid,
                                   "Install WASM app failed: load WASM file failed.");
                 app_manager_printf("error: %s\n", err);
-                destroy_all_aot_sections(aot_file->sections);
+                // destroy_all_aot_sections(aot_file->sections);
                 return false;
             }
             /* Destroy useless sections from list after load */
-            destroy_part_aot_sections(&aot_file->sections,
-                                      sections1,
-                                      sizeof(sections1) / sizeof(uint8));
+            // destroy_part_aot_sections(&aot_file->sections,
+            //                           sections1,
+            //                           sizeof(sections1) / sizeof(uint8));
 
 #if WASM_ENABLE_LIBC_WASI != 0
             if (!wasm_app_prepare_wasi_dir(module, m_name,
@@ -664,7 +664,7 @@ wasm_app_module_install(request_t * msg)
                 SEND_ERR_RESPONSE(msg->mid,
                                   "Install WASM app failed: prepare wasi env failed.");
                 wasm_runtime_unload(module);
-                destroy_all_aot_sections(aot_file->sections);
+                // destroy_all_aot_sections(aot_file->sections);
                 return false;
             }
             wasm_runtime_set_wasi_args(module,
@@ -675,13 +675,13 @@ wasm_app_module_install(request_t * msg)
 #endif
 
             /* Instantiate the AOT module */
-            inst = wasm_runtime_instantiate(module, 0, heap_size, err, err_size);
+            inst = wasm_runtime_instantiate(module, CONFIG_WASM_APP_STACK_SIZE_KB * 1024, heap_size, err, err_size);
             if (!inst) {
                 SEND_ERR_RESPONSE(msg->mid,
                                   "Install WASM app failed: instantiate wasm runtime failed.");
                 app_manager_printf("error: %s\n", err);
                 wasm_runtime_unload(module);
-                destroy_all_aot_sections(aot_file->sections);
+                // destroy_all_aot_sections(aot_file->sections);
                 return false;
             }
             break;
@@ -713,20 +713,22 @@ wasm_app_module_install(request_t * msg)
             bytecode_file = &wasm_app_file->u.bytecode;
 
             /* Load wasm module from sections */
-            module = wasm_runtime_load_from_sections(bytecode_file->sections, false,
-                                                     err, err_size);
+            char error_buf[128];
+
+            module = wasm_runtime_load(msg->payload, msg->payload_len,
+                                          error_buf, sizeof(error_buf));
             if (!module) {
                 SEND_ERR_RESPONSE(msg->mid,
                                   "Install WASM app failed: load WASM file failed.");
-                app_manager_printf("error: %s\n", err);
-                destroy_all_wasm_sections(bytecode_file->sections);
+                app_manager_printf("error: %s\n", error_buf);
+                // destroy_all_wasm_sections(bytecode_file->sections);
                 return false;
             }
 
             /* Destroy useless sections from list after load */
-            destroy_part_wasm_sections(&bytecode_file->sections,
-                                       sections1,
-                                       sizeof(sections1) / sizeof(uint8));
+            // destroy_part_wasm_sections(&bytecode_file->sections,
+            //                            sections1,
+            //                            sizeof(sections1) / sizeof(uint8));
 
 #if WASM_ENABLE_LIBC_WASI != 0
             if (!wasm_app_prepare_wasi_dir(module, m_name,
@@ -734,7 +736,7 @@ wasm_app_module_install(request_t * msg)
                 SEND_ERR_RESPONSE(msg->mid,
                                   "Install WASM app failed: prepare wasi env failed.");
                 wasm_runtime_unload(module);
-                destroy_all_wasm_sections(bytecode_file->sections);
+                // destroy_all_wasm_sections(bytecode_file->sections);
                 return false;
             }
             wasm_runtime_set_wasi_args(module,
@@ -751,14 +753,14 @@ wasm_app_module_install(request_t * msg)
                                   "Install WASM app failed: instantiate wasm runtime failed.");
                 app_manager_printf("error: %s\n", err);
                 wasm_runtime_unload(module);
-                destroy_all_wasm_sections(bytecode_file->sections);
+                // destroy_all_wasm_sections(bytecode_file->sections);
                 return false;
             }
 
             /* Destroy useless sections from list after instantiate */
-            destroy_part_wasm_sections(&bytecode_file->sections,
-                                       sections2,
-                                       sizeof(sections2) / sizeof(uint8));
+            // destroy_part_wasm_sections(&bytecode_file->sections,
+            //                            sections2,
+            //                            sizeof(sections2) / sizeof(uint8));
             break;
         }
 #endif /* endof WASM_ENALBE_INTERP != 0 || WASM_ENABLE_JIT != 0 */
@@ -849,7 +851,7 @@ wasm_app_module_install(request_t * msg)
 
     stack_size = CONFIG_WASM_APP_THREAD_STACK_SIZE_KB * 1024;
 #ifdef OS_ENABLE_HW_BOUND_CHECK
-    stack_size += 4 * BH_KB;
+    _size += 4 * BH_KB;
 #endif
     /* Create WASM app thread. */
     if (os_thread_create(&wasm_app_data->thread_id, wasm_app_routine,
@@ -879,12 +881,12 @@ fail:
     switch (package_type) {
 #if WASM_ENABLE_INTERP != 0 || WASM_ENABLE_JIT != 0
         case Wasm_Module_Bytecode:
-            destroy_all_wasm_sections(wasm_app_file->u.bytecode.sections);
+            // destroy_all_wasm_sections(wasm_app_file->u.bytecode.sections);
             break;
 #endif
 #if WASM_ENABLE_AOT != 0
         case Wasm_Module_AoT:
-            destroy_all_aot_sections(wasm_app_file->u.aot.sections);
+            // destroy_all_aot_sections(wasm_app_file->u.aot.sections);
             break;
 #endif
         default:
