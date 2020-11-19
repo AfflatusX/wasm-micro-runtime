@@ -553,6 +553,11 @@ wasm_runtime_set_custom_data(wasm_module_inst_t module_inst,
 WASM_RUNTIME_API_EXTERN void *
 wasm_runtime_get_custom_data(wasm_module_inst_t module_inst);
 
+bool
+create_wasm_sections(const uint8_t *buf, uint32_t size,
+                    wasm_section_t **p_section_list,
+                    char *error_buf, uint32_t error_buf_size);
+
 /**
  * Allocate memory from the heap of WASM module instance
  *

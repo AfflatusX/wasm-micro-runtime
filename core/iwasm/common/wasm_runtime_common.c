@@ -147,6 +147,17 @@ fail1:
     return false;
 }
 
+bool
+create_wasm_sections(const uint8 *buf, uint32 size,
+                WASMSection **p_section_list,
+                char *error_buf, uint32 error_buf_size) {
+#if WASM_ENABLE_AOT != 0
+    return aot_create_sections(buf, size, p_section_list, error_buf, error_buf_size);
+#endif
+    printf("only AOT version of create_sections have been exposed.\n");
+    return false;
+}
+
 static bool
 wasm_runtime_exec_env_check(WASMExecEnv *exec_env)
 {
@@ -208,8 +219,9 @@ bool
 wasm_runtime_full_init(RuntimeInitArgs *init_args)
 {
     if (!wasm_runtime_memory_init(init_args->mem_alloc_type,
-                                  &init_args->mem_alloc_option))
+                                  &init_args->mem_alloc_option)) {
         return false;
+    }
 
     if (!wasm_runtime_env_init()) {
         wasm_runtime_memory_destroy();

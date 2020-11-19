@@ -5,8 +5,8 @@
 
 #include "runtime_timer.h"
 
-#define PRINT(...)
-//#define PRINT printf
+//#define PRINT(...)
+#define PRINT printf
 
 typedef struct _app_timer {
     struct _app_timer * next;

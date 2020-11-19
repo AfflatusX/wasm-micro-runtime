@@ -39,6 +39,14 @@
 #endif
 #endif
 
+// #define BH_DEBUG 1
+// #define WASM_ENABLE_AOT 0
+// #define WASM_ENABLE_INTERP 1
+// #define WASM_ENABLE_LIBC_BUILTIN 1
+// #define WASM_ENABLE_BASE_LIB 1
+// #define WASM_ENABLE_APP_FRAMEWORK 1
+// #define BH_ENABLE_MEMORY_PROFILING 1
+
 #ifndef BH_DEBUG
 #define BH_DEBUG 0
 #endif

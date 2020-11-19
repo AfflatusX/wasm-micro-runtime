@@ -310,6 +310,21 @@ typedef struct AOTTargetInfo {
 } AOTTargetInfo;
 
 /**
+ * Create AOT Sections from buffer
+ * @param buf the byte buffer which contains the AOT file data
+ * @param size the size of the buffer
+ * @param p_section_list pointer to the AOTSection. If succeeded this would be pointing to the created section header.
+ * @param error_buf output of the error info
+ * @param error_buf_size the size of the error string
+ *
+ * @return return true if sections are created, otherwise false.
+ */
+bool
+aot_create_sections(const uint8 *buf, uint32 size,
+                AOTSection **p_section_list,
+                char *error_buf, uint32 error_buf_size);
+
+/**
  * Load a AOT module from aot file buffer
  * @param buf the byte buffer which contains the AOT file data
  * @param size the size of the buffer

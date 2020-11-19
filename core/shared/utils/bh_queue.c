@@ -135,7 +135,7 @@ bool bh_post_msg(bh_queue *queue, unsigned short tag, void *body,
         // bh_post_msg2 already freed the msg for failure
         return false;
     }
-
+    
     return true;
 }
 
@@ -188,7 +188,7 @@ bh_message_t bh_get_msg(bh_queue *queue, int timeout)
         bh_queue_cond_timedwait(&queue->queue_wait_cond, &queue->queue_lock,
                                 timeout);
     }
-
+    
     if (queue->cnt == 0) {
         bh_assert(queue->head == NULL);
         bh_assert(queue->tail == NULL);

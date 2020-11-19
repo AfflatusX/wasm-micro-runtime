@@ -21,8 +21,10 @@ typedef struct {
 void wasm_timer_callback(timer_id_t id, unsigned int mod_id)
 {
     module_data* module = module_data_list_lookup_id(mod_id);
-    if (module == NULL)
+    if (module == NULL) {
+        printf("module is null, won't post data.\n");
         return;
+    }
 
     // !!! the length parameter must be 0, so the receiver will
     //     not free the payload pointer.

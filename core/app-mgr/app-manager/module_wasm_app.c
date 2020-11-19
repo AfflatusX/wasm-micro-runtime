@@ -39,6 +39,7 @@ static uint8 wasm_aot_version[4] = {
     (uint8) 0x00
 };
 
+/* Execution environment, e.g. stack info */
 /**
  * Align an unsigned value on a alignment boundary.
  *
@@ -552,6 +553,11 @@ cleanup_app_resource(module_data *m_data)
 /*        Module specific functions implementation          */
 /************************************************************/
 
+#define CONFIG_WASM_APP_THREAD_STACK_SIZE 1024 * 64
+#define CONFIG_DEFAULT_APP_STACK_SIZE 1024 * 2
+#define CONFIG_DEFAULT_APP_HEAP_SIZE 1024 * 4
+#define CONFIG_DEFAULT_MAIN_THREAD_STACK_SIZE 1024 * CONFIG_WASM_APP_THREAD_STACK_SIZE
+
 static bool
 wasm_app_module_init(void)
 {
@@ -669,14 +675,14 @@ wasm_app_module_install(request_t * msg)
             if (!module) {
                 SEND_ERR_RESPONSE(msg->mid,
                                   "Install WASM app failed: load WASM file failed.");
-                app_manager_printf("error: %s\n", err);
-                // destroy_all_aot_sections(aot_file->sections);
+                app_manager_printf("error: %s\n", error_buf);
+                destroy_all_aot_sections(aot_file->sections);
                 return false;
             }
             /* Destroy useless sections from list after load */
-            // destroy_part_aot_sections(&aot_file->sections,
-            //                           sections1,
-            //                           sizeof(sections1) / sizeof(uint8));
+            destroy_part_aot_sections(&wasm_app_file->u.aot.sections,
+                                      sections1,
+                                      sizeof(sections1) / sizeof(uint8));
 
 #if WASM_ENABLE_LIBC_WASI != 0
             if (!wasm_app_prepare_wasi_dir(module, m_name,
@@ -684,7 +690,7 @@ wasm_app_module_install(request_t * msg)
                 SEND_ERR_RESPONSE(msg->mid,
                                   "Install WASM app failed: prepare wasi env failed.");
                 wasm_runtime_unload(module);
-                // destroy_all_aot_sections(aot_file->sections);
+                destroy_all_aot_sections(aot_file->sections);
                 return false;
             }
             wasm_runtime_set_wasi_args(module,
@@ -695,13 +701,13 @@ wasm_app_module_install(request_t * msg)
 #endif
 
             /* Instantiate the AOT module */
-            inst = wasm_runtime_instantiate(module, 0, heap_size, err, err_size);
+            inst = wasm_runtime_instantiate(module, CONFIG_WASM_APP_STACK_SIZE_KB * 1024, heap_size, err, err_size);
             if (!inst) {
                 SEND_ERR_RESPONSE(msg->mid,
                                   "Install WASM app failed: instantiate wasm runtime failed.");
                 app_manager_printf("error: %s\n", err);
                 wasm_runtime_unload(module);
-                // destroy_all_aot_sections(aot_file->sections);
+                destroy_all_aot_sections(aot_file->sections);
                 return false;
             }
             break;
@@ -754,7 +760,7 @@ wasm_app_module_install(request_t * msg)
                 SEND_ERR_RESPONSE(msg->mid,
                                   "Install WASM app failed: prepare wasi env failed.");
                 wasm_runtime_unload(module);
-                // destroy_all_wasm_sections(bytecode_file->sections);
+                destroy_all_wasm_sections(bytecode_file->sections);
                 return false;
             }
             wasm_runtime_set_wasi_args(module,
@@ -765,13 +771,13 @@ wasm_app_module_install(request_t * msg)
 #endif
 
             /* Instantiate the wasm module */
-            inst = wasm_runtime_instantiate(module, 0, heap_size, err, err_size);
+            inst = wasm_runtime_instantiate(module, CONFIG_WASM_APP_STACK_SIZE_KB * 1024, heap_size, err, err_size);
             if (!inst) {
                 SEND_ERR_RESPONSE(msg->mid,
                                   "Install WASM app failed: instantiate wasm runtime failed.");
                 app_manager_printf("error: %s\n", err);
                 wasm_runtime_unload(module);
-                // destroy_all_wasm_sections(bytecode_file->sections);
+                destroy_all_wasm_sections(bytecode_file->sections);
                 return false;
             }
 
@@ -814,7 +820,7 @@ wasm_app_module_install(request_t * msg)
     }
 
     if (!(wasm_app_data->exec_env = exec_env =
-                wasm_runtime_create_exec_env(inst, CONFIG_WASM_APP_STACK_SIZE_KB * 1024))) {
+                wasm_runtime_create_exec_env(inst, CONFIG_DEFAULT_APP_STACK_SIZE))) {
         SEND_ERR_RESPONSE(msg->mid, "Install WASM app failed: create exec env failed.");
         goto fail;
     }
@@ -867,9 +873,9 @@ wasm_app_module_install(request_t * msg)
         goto fail;
     }
 
-    stack_size = CONFIG_WASM_APP_THREAD_STACK_SIZE_KB * 1024;
+    stack_size = CONFIG_DEFAULT_MAIN_THREAD_STACK_SIZE;
 #ifdef OS_ENABLE_HW_BOUND_CHECK
-    _size += 4 * BH_KB;
+    stack_size += 4 * BH_KB;
 #endif
     /* Create WASM app thread. */
     if (os_thread_create(&wasm_app_data->thread_id, wasm_app_routine,
@@ -899,12 +905,12 @@ fail:
     switch (package_type) {
 #if WASM_ENABLE_INTERP != 0 || WASM_ENABLE_JIT != 0
         case Wasm_Module_Bytecode:
-            // destroy_all_wasm_sections(wasm_app_file->u.bytecode.sections);
+            destroy_all_wasm_sections(wasm_app_file->u.bytecode.sections);
             break;
 #endif
 #if WASM_ENABLE_AOT != 0
         case Wasm_Module_AoT:
-            // destroy_all_aot_sections(wasm_app_file->u.aot.sections);
+            destroy_all_aot_sections(wasm_app_file->u.aot.sections);
             break;
 #endif
         default:
@@ -1645,3 +1651,4 @@ wasm_get_wasi_root_dir()
     return wasi_root_dir;
 }
 #endif
+

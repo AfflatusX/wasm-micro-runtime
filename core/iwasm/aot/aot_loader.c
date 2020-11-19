@@ -1768,8 +1768,8 @@ destroy_sections(AOTSection *section_list, bool destroy_aot_text)
     }
 }
 
-static bool
-create_sections(const uint8 *buf, uint32 size,
+bool
+aot_create_sections(const uint8 *buf, uint32 size,
                 AOTSection **p_section_list,
                 char *error_buf, uint32 error_buf_size)
 {
@@ -1892,7 +1892,7 @@ load(const uint8 *buf, uint32 size, AOTModule *module,
         return false;
     }
 
-    if (!create_sections(buf, size, &section_list, error_buf, error_buf_size))
+    if (!aot_create_sections(buf, size, &section_list, error_buf, error_buf_size))
         return false;
 
     ret = load_from_sections(module, section_list, error_buf, error_buf_size);
